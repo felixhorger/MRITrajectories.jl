@@ -1,0 +1,4 @@
+name = "MRITrajectories"
+uuid = "4dc9c2d4-1ff8-4f66-9cae-c2258aa50a85"
+authors = ["Felix Horger <felix.horger@kcl.ac.uk>"]
+version = "0.1.0"
