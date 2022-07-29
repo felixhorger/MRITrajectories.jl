@@ -37,8 +37,8 @@ function sort_angles!(
 	(φ, indices) = reshape.((φ, indices), spokes_per_dynamic, num_dynamic)
 	@views for p = 1:num_dynamic
 		perm = sortperm(φ[:, p])
-		φ[:, p] .= φ[perm, p]
-		indices[:, p] .= indices[perm, p]
+		permute!(φ[:, p], perm)
+		permute!(indices[:, p], perm)
 	end
 	return φ, indices
 end
