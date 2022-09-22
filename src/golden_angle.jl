@@ -15,31 +15,11 @@ function golden_angle_incremented(num::Integer, angles_per_2π::Integer)
 	resolution = 2π / angles_per_2π
 	ξ = Φ / resolution # How many indices to jump if incremented by golden angle
 	# Indices of angles in the range
-	indices = @. mod(floor(Int64, ξ * (0:num-1)), angles_per_2π)
+	indices = @. mod(floor(Int, ξ * (0:num-1)), angles_per_2π)
 	# Angles
 	φ = @. indices * resolution
 	# One based indexing
 	indices .+= 1
-	return φ, indices
-end
-
-"""
-	Sort angles for dynamic imaging to minimise the difference between consecutive angles
-	φ[spokes per dynamic, dynamic], indices same
-
-"""
-function sort_angles!(
-	φ::AbstractVector{<: Real},
-	indices::AbstractVector{<: Integer},
-	spokes_per_dynamic::Integer,
-	num_dynamic::Integer
-)
-	(φ, indices) = reshape.((φ, indices), spokes_per_dynamic, num_dynamic)
-	@views for p = 1:num_dynamic
-		perm = sortperm(φ[:, p])
-		permute!(φ[:, p], perm)
-		permute!(indices[:, p], perm)
-	end
 	return φ, indices
 end
 
