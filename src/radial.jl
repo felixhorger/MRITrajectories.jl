@@ -60,14 +60,15 @@ chronological_order(indices::AbstractMatrix) = vec(transpose(indices))
 	continuing this alternating scheme for all partitions.
 	This minimises changes in gradients and thus minimises eddy currents.
 
+	TODO: Would this also work well with spirals?
 """
-function stack_of_stars(spoke_indices::AbstractMatrix{<: Integer}, num_partitions::Integer)
+function stack_of_stars(spoke_indices::AbstractMatrix{<: Integer}, partitions::AbstractVector{<: Integer})
 	spokes_per_pulse, num_dynamic = size(spoke_indices)
 	incr = 1
 	spoke = 1
 	k = 1
-	sampling = Vector{CartesianIndex{2}}(undef, spokes_per_pulse * num_dynamic * num_partitions)
-	for partition = 1:num_partitions
+	sampling = Vector{CartesianIndex{2}}(undef, spokes_per_pulse * num_dynamic * length(partitions))
+	for partition in partitions
 		while (incr > 0 && spoke ≤ spokes_per_pulse) || (incr < 0 && spoke ≥ 1)
 			for t = 1:num_dynamic
 				sampling[k] = CartesianIndex(spoke_indices[spoke, t], partition)
