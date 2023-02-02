@@ -7,6 +7,9 @@ function required_num_spokes(num_lines::Integer)
 	return num_spokes
 end
 
+oddify(n::Integer) = n + 1 - mod(n, 2)
+
+
 """
 	Assumes the samples are symmetrically arranged around k = 0,
 	i.e. if num_r is even, no sample hits k = 0, if num_r is odd, the centre one does.
@@ -14,7 +17,8 @@ end
 """
 macro calculate_spokes(num_φ, φ)
 	return esc(quote
-		r = reshape(range(-π, π; length=num_r), 1, num_r)
+		r = reshape(range(-π + π/num_r, π - π/num_r; length=num_r), 1, num_r)
+		#r = reshape(range(-π, π - 2π/num_r; length=num_r), 1, num_r)
 		# Allocate memory
 		k = Array{Float64, 3}(undef, 2, num_r, $num_φ)
 		e_r = Vector{Float64}(undef, 2) # Unit vector pointing in radial direction
@@ -43,6 +47,7 @@ function sort_angles!(
 	spokes_per_dynamic::Integer,
 	num_dynamic::Integer
 )
+	@assert num_dynamic > 1
 	(φ, indices) = reshape.((φ, indices), spokes_per_dynamic, num_dynamic)
 	@views for p = 1:num_dynamic
 		perm = sortperm(φ[:, p])
