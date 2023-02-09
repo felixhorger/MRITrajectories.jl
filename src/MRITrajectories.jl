@@ -7,6 +7,7 @@ module MRITrajectories
 	include("golden_angle.jl")
 	include("radial.jl")
 	include("cartesian.jl")
+	include("poissondisk.jl")
 
 
 	# TODO: Not sure this is the best place for it
