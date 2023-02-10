@@ -36,6 +36,7 @@ radial_spokes(φ::AbstractVector{<: Real}, num_r::Integer) = @calculate_spokes(l
 radial_spokes(num_φ::Integer, num_r::Integer) = @calculate_spokes(num_φ, 2π / num_φ * (spoke - 1))
 
 
+
 """
 	Sort angles for dynamic imaging to minimise the difference between consecutive angles
 	φ[spokes per dynamic, dynamic], indices same
@@ -61,6 +62,7 @@ chronological_order(indices::AbstractMatrix) = vec(transpose(indices))
 
 """
 	Stack of stars, fully sampled along partition direction.
+	spoke_indices[spokes_per_pulse, num_dynamic]
 	Spoke indices are increased until end is reached, then decreased for the next partition,
 	continuing this alternating scheme for all partitions.
 	This minimises changes in gradients and thus minimises eddy currents.

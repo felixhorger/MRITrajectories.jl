@@ -19,33 +19,3 @@ function uniform_dynamic(shape::NTuple{N, Integer}, num_dynamic::Integer, readou
 	return indices
 end
 
-
-"""
-	sample_density() = (x,y,z,...) where x, y, z, ... ∈ [-0.5, 0.5]
-"""
-function variable_density(shape::NTuple{N, Integer}, num::Integer, sample_density::Function; maxiter=100num) where N
-	indices = Vector{CartesianIndex{N}}(undef, num)
-	i = 1
-	j = 0
-	upper = CartesianIndex(shape)
-	shape_minus_one = shape .- 1
-	while i ≤ num
-		# Check maximum iterations
-		j += 1
-		if j == maxiter
-			error("Maximum number of iterations exceeded")
-			return indices
-		end
-		# Sample
-		sample = sample_density()
-		!all(-0.5 .≤ sample .≤ 0.5) && continue
-		indices[i] = CartesianIndex(floor.(Int, shape_minus_one .* (sample .+ 0.5)) .+ 1)
-		i += 1
-	end
-	return indices
-end
-
-function poisson_disk()
-	error("Not implemented")
-end
-

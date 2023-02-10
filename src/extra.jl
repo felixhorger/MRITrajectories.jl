@@ -10,9 +10,11 @@
 
 	outputs points in [0, shape[d]]
 
+	Periodic boundaries
+
 	Note: problem for constant radius, it is not guaranteed that every cell is occupied
 """
-function poisson(shape::NTuple{N, Integer}, r::Real; radius::Function=(_ -> r), k::Integer=30) where N
+function poissondisk(shape::NTuple{N, Integer}, r::Real; radius::Function=(_ -> r), k::Integer=30) where N
 	# Set up arrays
 	rmin = r
 	grid_unit = rmin
@@ -58,8 +60,11 @@ function poisson(shape::NTuple{N, Integer}, r::Real; radius::Function=(_ -> r), 
 			for j in CartesianIndices(ntuple(_ -> neighbours, N)) # Edges are checked anyways despite not necessary
 				l = ι + j
 				l = CartesianIndex(mod1.(Tuple(l), grid_shape))
-				#!checkbounds(Bool, points, l) && continue
-				if sum(abs2, y .- points[l]) < rsq
+				#For non-periodic boundaries this can be used: !checkbounds(Bool, points, l) && continue
+				z = points[l]
+				any(isnan, z) && continue
+				Δ = periodic_distance.(abs.(y .- z), shape)
+				if sum(abs2, Δ) < rsq
 					is_valid = false
 					break
 				end
@@ -86,10 +91,66 @@ function poisson(shape::NTuple{N, Integer}, r::Real; radius::Function=(_ -> r), 
 	return valid_points
 end
 
+@inline function periodic_distance(Δ::Real, boundary::Real)
+	@assert Δ ≥ 0
+	if Δ > boundary ÷ 2
+		return boundary - Δ
+	else
+		return Δ
+	end
+end
+
+
+
+"""
+	sample_density() = (x,y,z,...) where x, y, z, ... ∈ [0, 1]
+	samples outside the specified region will be rejected without error
+	returns a Vector{NTuple{N, Float64}} 
+"""
+function rand(Int, sample_density::Function, num::Integer, shape::NTuple{N, Integer}; maxiter=100num) where N
+	mask = zeros(Bool, shape)
+	valid_points = Vector{CartesianIndex{N}}(undef, num)
+	p = 0
+	while p < num
+		points = rand(sample_density, num - p, shape; maxiter)
+		for point in points
+			index = CartesianIndex(floor.(Int, point .+ 1))
+			if mask[index] == 0
+				valid_points[p+1] = index
+				mask[index] = 1
+				p += 1
+			end
+		end
+	end
+	return valid_points
+end
+
+function rand(sample_density::Function, num::Integer, shape::NTuple{N, Integer}; maxiter=100num) where N
+	points = Vector{NTuple{N, Float64}}(undef, num)
+	i = 1
+	j = 0
+	upper = CartesianIndex(shape)
+	while i ≤ num
+		# Check maximum iterations
+		j += 1
+		if j == maxiter
+			error("Maximum number of iterations exceeded")
+			return indices
+		end
+		# Sample
+		sample = sample_density()
+		!all(0 .≤ sample .< 1) && continue
+		points[i] = shape .* sample
+		i += 1
+	end
+	return points
+end
+
+
 """
 	floors the floats and adds one
 """
-function points2indices(points::AbstractVector{NTuple{N, Float64}}) where N
+function cartesianise(points::AbstractVector{NTuple{N, Float64}}) where N
 	[CartesianIndex(floor.(Int, p) .+ 1) for p in points]
 end
 
