@@ -2,7 +2,7 @@
 function required_num_spokes(num_lines::Integer)
 	num_spokes = floor(Int, 0.5π * num_lines)
 	if iseven(num_spokes)
-		num_spokes += 1
+		num_spokes -= 1
 	end
 	return num_spokes
 end
@@ -69,22 +69,36 @@ chronological_order(indices::AbstractMatrix) = vec(transpose(indices))
 
 	TODO: Would this also work well with spirals?
 """
-function stack_of_stars(spoke_indices::AbstractMatrix{<: Integer}, partitions::AbstractVector{<: Integer})
-	spokes_per_pulse, num_dynamic = size(spoke_indices)
-	incr = 1
-	spoke = 1
-	k = 1
-	sampling = Vector{CartesianIndex{2}}(undef, spokes_per_pulse * num_dynamic * length(partitions))
-	for partition in partitions
-		while (incr > 0 && spoke ≤ spokes_per_pulse) || (incr < 0 && spoke ≥ 1)
-			for t = 1:num_dynamic
-				sampling[k] = CartesianIndex(spoke_indices[spoke, t], partition)
-				k += 1
+function stack_of_stars(spoke_indices::AbstractMatrix{<: Integer}, partitions::AbstractVector{<: Integer}; version=:new)
+	if version == :old
+		@warn "Old stack of stars"
+		spokes_per_pulse, num_dynamic = size(spoke_indices)
+		incr = 1
+		spoke = 1
+		k = 1
+		sampling = Vector{CartesianIndex{2}}(undef, spokes_per_pulse * num_dynamic * length(partitions))
+		for partition in partitions
+			while (incr > 0 && spoke ≤ spokes_per_pulse) || (incr < 0 && spoke ≥ 1)
+				for t = 1:num_dynamic
+					sampling[k] = CartesianIndex(spoke_indices[spoke, t], partition)
+					k += 1
+				end
+				spoke += incr
 			end
+			incr *= -1
 			spoke += incr
 		end
-		incr *= -1
-		spoke += incr
+	elseif version == :new
+		@warn "New stack of stars"
+		spokes_per_pulse, num_dynamic = size(spoke_indices)
+		k = 1
+		sampling = Vector{CartesianIndex{2}}(undef, spokes_per_pulse * num_dynamic * length(partitions))
+		for partition in partitions, spoke = 1:spokes_per_pulse, t = 1:num_dynamic
+			sampling[k] = CartesianIndex(spoke_indices[spoke, t], partition)
+			k += 1
+		end
+	else
+		error("Unrecognised version")
 	end
 	return sampling
 end
