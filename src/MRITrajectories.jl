@@ -5,10 +5,12 @@ module MRITrajectories
 	import Base: rand
 	import StatsBase
 
+	include("cartesian.jl")
 	include("golden_angle.jl")
 	include("radial.jl")
-	include("cartesian.jl")
+	include("spiral.jl")
 	include("extra.jl")
+	include("utils.jl")
 
 	# TODO: Not sure this is the best place for it
 	"""
