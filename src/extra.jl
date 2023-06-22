@@ -100,6 +100,15 @@ end
 end
 
 
+"""
+	distribute_dynamically(indices::Vector{CartesianIndex{N}}, num_dynamic::Integer) where N
+
+Algorithm:
+	1) sort indices
+	2) for each unique index, distribute randomly along time:
+	ensure that distribution is equal by enforcing that single timepoints do not deviate too much from the
+	current minimum number of samples per timepoint
+"""
 function distribute_dynamically(indices::Vector{CartesianIndex{N}}, num_dynamic::Integer) where N
 	num_samples = length(indices)
 	num_samples_per_dynamic = num_samples ÷ num_dynamic
@@ -135,6 +144,93 @@ function distribute_dynamically(indices::Vector{CartesianIndex{N}}, num_dynamic:
 	end
 	return split_indices
 end
+
+# Distribute by calculating the conditioning
+# Problems: Ends up equally distributing the conditioning no matter the sample distribution => not optimal
+#function distribute_dynamically(VH, indices::Vector{CartesianIndex{N}}, shape, num_dynamic::Integer) where N
+#	VHn = VH ./ sqrt.(sum(abs2, VH; dims=1))
+#	num_σ = size(VH, 1)
+#	num_samples = length(indices)
+#	num_samples_per_dynamic = num_samples ÷ num_dynamic
+#	upper_extra = mod(length(indices), num_dynamic) + 1
+#	split_indices = [Vector{CartesianIndex{N}}(undef, 0) for t = 1:num_dynamic]
+#	lengths = num_samples_per_dynamic .+ (0, 1)
+#	foreach(t -> sizehint!.(split_indices, lengths[1 + (t < upper_extra)]), 1:num_dynamic)
+#	sorted_indices = sort(indices)
+#	# Count
+#	indices_to_distribute = Vector{Tuple{Int64, CartesianIndex{N}}}(undef, 0) 
+#	sizehint!(indices_to_distribute, num_samples ÷ prod(shape))
+#	max_counts = 0
+#	this_counts = 0
+#	J = sorted_indices[1]
+#	for i in eachindex(sorted_indices)
+#		I = sorted_indices[i]
+#		if I == J
+#			this_counts += 1
+#		else
+#			push!(indices_to_distribute, (this_counts, J))
+#			J = I
+#			max_counts = max(max_counts, this_counts)
+#			this_counts = 1
+#		end
+#	end
+#	if this_counts != 1
+#		push!(indices_to_distribute, (this_counts, sorted_indices[end]))
+#	end
+#	let l = [n for (n, _) in indices_to_distribute]
+#		@assert sum(l) == num_samples
+#		@assert max_counts == maximum(l)
+#	end
+#	@show max_counts
+#	error()
+#	min_length = 0
+#	occupied = zeros(Bool, num_dynamic)
+#	M = Matrix{Float64}(undef, num_σ, max_counts)
+#	Mt = [Matrix{Float64}(undef, num_σ, max_counts) for tid = 1:Threads.nthreads()]
+#	orthogonal = Matrix{Float64}(undef, num_σ, num_dynamic)
+#	orthogonal_norm = Vector{Float64}(undef, num_dynamic)
+#	# Distribute
+#	for (τ, k) in enumerate(randperm(length(indices_to_distribute)))
+#		@show round(100 * τ / length(indices_to_distribute); digits=3)
+#		n, K = indices_to_distribute[k]
+#		occupied .= false
+#		#
+#		# First at random
+#		#argmin(length.(split_indices))
+#		for t0 in randperm(num_dynamic)
+#			this_length = length(split_indices[t0])
+#			(this_length == lengths[1 + (t0 < upper_extra)] || this_length > min_length) && continue
+#			@views M[:, 1] = VHn[:, t0]
+#			occupied[t0] = true
+#			push!(split_indices[t0], K)
+#			break
+#		end
+#		min_length = minimum(length.(split_indices))
+#		# Others according to best conditioning
+#		for i = 2:n
+#			@views foreach(tid -> Mt[tid][:, 1:i-1] .= M[:, 1:i-1], 1:Threads.nthreads())
+#			#Q = Matrix(qr(M[:, 1:i-1]).Q)
+#			#orthogonal_dims = min(i-1, num_σ)
+#			#@views mul!(orthogonal[1:orthogonal_dims, :], Q', VHn)
+#			#@views orthogonal_norm = dropdims(sum(abs2, orthogonal[1:orthogonal_dims, :]; dims=1); dims=1)
+#			Threads.@threads for t = 1:num_dynamic
+#				this_M = Mt[Threads.threadid()]
+#				@views this_M[:, i] = VHn[:, t]
+#				orthogonal_norm[t] = @views cond(this_M[:, 1:i])
+#			end
+#			for t in sortperm(orthogonal_norm) # ascending
+#				this_length = length(split_indices[t])
+#				(occupied[t] || this_length == lengths[1 + (t < upper_extra)] || this_length > min_length) && continue
+#				push!(split_indices[t], K)
+#				@views M[:, i] = VHn[:, t]
+#				occupied[t] = true
+#				break
+#			end
+#			min_length = minimum(length.(split_indices))
+#		end
+#	end
+#	return split_indices
+#end
 
 #function distribute_dynamically(indices::Vector{CartesianIndex{N}}, num_dynamic::Integer) where N
 #	num_samples = length(indices)

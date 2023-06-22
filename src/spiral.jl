@@ -6,9 +6,9 @@ function required_revolutions(n::Integer, interleaves::Integer)
 	return 0.5n / interleaves
 end
 
-function spiral(r::Function, Φ::Real, n::Integer, interleaves::Integer)
-	k = Array{Float64, 3}(undef, 2, n, interleaves)
-	angles = range(0, Φ; length=n+1)[1:n]
+function spiral(r::Function, Φ::Real, num_Φ::Integer, interleaves::Integer)
+	k = Array{Float64, 3}(undef, 2, num_Φ, interleaves)
+	angles = range(0, Φ; length=num_Φ+1)[1:num_Φ]
 	for i = 1:interleaves
 		Δφ = 2π * (i-1) / interleaves
 		for (j, φ) = enumerate(angles)

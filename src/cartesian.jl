@@ -49,6 +49,76 @@ function tiled(shape::NTuple{N, Integer}, step::NTuple{N, Integer}; random=false
 end
 
 
+
+function tiled_polar(
+	shape::NTuple{2, Integer},
+	step_r::AbstractVector{<: Real},
+	num_ϕ::AbstractVector{<: Integer},
+	num_samples::Integer;
+	random=true
+)
+	@assert length(step_r) == length(num_ϕ)
+	@assert sum(step_r) ≈ 0.5
+	# Allocate memory for storing tile indices
+	tiles = [
+		[ Vector{CartesianIndex{2}}(undef, 0) for _ = 1:num_ϕ[i]]
+		for i in eachindex(step_r)
+	]
+	sizehint!.(tiles, num_ϕ)
+	cumsum_r = Vector{Float64}(undef, length(step_r)+1)
+	cumsum_r[1] = 0.0
+	normalisation::Float64 = prod(shape)
+	for i in eachindex(step_r)
+		Σ = cumsum_r[i]
+		ρ = step_r[i]
+		area = ceil(Int, 0.25π * ((ρ + Σ)^2 - Σ^2) * normalisation / num_ϕ[i])
+		sizehint!.(tiles[i], area)
+		cumsum_r[i+1] = Σ + ρ
+	end
+	# Calculate ϕ angles steps
+	step_ϕ = [2π / num_ϕ[i] for i in eachindex(num_ϕ)]
+	# Distribute point among tiles
+	centre = shape ./ 2
+	normalisation = sqrt(normalisation)
+	for I in CartesianIndices(shape)
+		R = Tuple(I) .- centre
+		r = sqrt(R[1]^2 + R[2]^2) / normalisation
+		ϕ = mod2pi(atan(R[2], R[1]))
+		i_r = 0
+		for outer i_r in eachindex(step_r)
+			r < cumsum_r[i_r+1] && break
+		end
+		i_ϕ = floor(Int, ϕ / step_ϕ[i_r]) + 1
+		push!(tiles[i_r][i_ϕ], I)
+	end
+	if random
+		shuffle!.(tiles)
+		foreach(i_r -> shuffle!.(tiles[i_r]), eachindex(step_r))
+	end
+	counters = [ 
+		[ 1 for i_ϕ = 1:num_ϕ[i_r] ]
+		for i_r in eachindex(step_r)
+	]
+	i = 1
+	sampling = Vector{CartesianIndex{2}}(undef, num_samples)
+	while i ≤ num_samples
+		for i_r in eachindex(step_r)
+			this_tiles = tiles[i_r]
+			this_counter = counters[i_r]
+			for i_ϕ = 1:num_ϕ[i_r]
+				j = this_counter[i_ϕ]
+				sampling[i] = this_tiles[i_ϕ][j]
+				this_counter[i_ϕ] = mod1(j+1, length(this_tiles[i_ϕ]))
+				i += 1
+				i > num_samples && break
+			end
+			i > num_samples && break
+		end
+	end
+	return sampling
+end
+
+
 #function regular_dynamic(shape::NTuple{N, Integer}, num_dynamic::Integer, num_per_k::Integer) where N
 #	num_k_per_cycle = num_dynamic ÷ num_per_k
 #	step = num_k_per_cycle * num_per_k
