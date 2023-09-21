@@ -5,12 +5,13 @@
 	Φ is the golden angle
 =#
 
-const Φ = 2π / (1 + √5)
+function golden_angle(n::Integer)
+	@assert n > 0
+	return π / (0.5 * (1 + √5) + n - 1)
+end
 
-"""
-	Golden angle incremented angles
-"""
-function golden_angle_incremented(num::Integer, angles_per_2π::Integer)
+function golden_angle_incremented(num::Integer, angles_per_2π::Integer; n_golden::Integer=1)
+	Φ = golden_angle(n_golden)
 	# Angle resolution
 	resolution = 2π / angles_per_2π
 	ξ = Φ / resolution # How many indices to jump if incremented by golden angle
