@@ -37,6 +37,38 @@ end
 radial_spokes(φ::AbstractVector{<: Real}, num_r::Integer) = @calculate_spokes(length(φ), φ[spoke])
 radial_spokes(num_φ::Integer, num_r::Integer) = @calculate_spokes(num_φ, 2π / num_φ * (spoke - 1))
 
+macro calculate_spokes(num_samples, φ, θ)
+	return esc(quote
+		r = reshape(range(-π + π/num_r, π - π/num_r; length=num_r), 1, num_r)
+		#r = reshape(range(-π, π - 2π/num_r; length=num_r), 1, num_r)
+		# Allocate memory
+		k = Array{Float64, 3}(undef, 3, num_r, $num_samples)
+		e_r = Vector{Float64}(undef, 3) # Unit vector pointing in radial direction
+		# Iterate φ
+		for spoke = 1:$num_samples
+			sineφ, cosineφ = sincos($φ)
+			sineθ, cosineθ = sincos($θ)
+			e_r[1] = cosineφ * sineθ
+			e_r[2] = sineφ   * sineθ
+			e_r[3] = cosineθ
+			@. k[:, :, spoke] = r * e_r
+		end
+		return k
+	end)
+end
+function radial_spokes(φ::AbstractVector{<: Real}, θ::AbstractVector{<: Real}, num_r::Integer)
+	@assert length(φ) == length(θ)
+	@calculate_spokes(length(φ), φ[spoke], θ[spoke])
+end
+function radial_spokes(num_φ::Integer, num_θ::Integer, num_r::Integer)
+	num_samples = num_φ * num_θ
+	@calculate_spokes(
+		num_samples,
+		2π / num_φ * (mod1(spoke, num_φ) - 1),
+		π / (num_θ+1) * ((spoke-1) ÷ num_φ + 1)
+	)
+end
+
 
 
 """
@@ -106,18 +138,28 @@ function stack_of_stars(spoke_indices::AbstractMatrix{<: Integer}, partitions::A
 end
 
 
+# num_θ referes to the number of angles in 2π, even though θ ∈ [0, π]
 function golden_kooshball(num_samples::Integer, num_φ::Integer, num_θ::Integer)
 
 	φ1, φ2 = golden_means(2)
 
 	θ = Vector{Float64}(undef, num_samples)
 	φ = similar(θ)
+	idx = similar(θ, CartesianIndex{2})
 
+	θ_resolution = 2π / num_θ
+	φ_resolution = 2π / num_φ
 	for i = 0:num_samples-1
-		θ[i+1] = acos(mod(i * φ1, 1))
-		φ[i+1] = 2π * mod(i * φ2, 1)
+		t = i + 1
+		θ[t] = acos(mod(i * φ1, 1))
+		φ[t] = 2π * mod(i * φ2, 1)
+		@show n = floor(Int, θ[t] / θ_resolution)
+		@show m = floor(Int, φ[t] / φ_resolution)
+		θ[t] = n * θ_resolution
+		φ[t] = m * φ_resolution
+		idx[t] = CartesianIndex(n, m)
 	end
 
-	return φ, θ
+	return φ, θ, idx
 end
 
