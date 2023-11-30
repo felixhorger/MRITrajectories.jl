@@ -2,6 +2,7 @@
 module MRITrajectories
 
 	using Random
+	using LinearAlgebra
 	import Base: rand
 	import StatsBase
 
@@ -14,7 +15,9 @@ module MRITrajectories
 
 	# TODO: Not sure this is the best place for it
 	"""
-		bandwidth per pixel in units of 1000 / [δt]
+			dwelltime2bandwidthppx(δt::Real, num_columns::Integer)
+
+		Bandwidth per pixel in units of 1 / (1000 * [δt] * px)
 	"""
 	dwelltime2bandwidthppx(δt::Real, num_columns::Integer) = 1000. / (δt * num_columns)
 

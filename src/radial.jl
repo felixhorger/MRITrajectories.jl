@@ -14,6 +14,8 @@ oddify(n::Integer) = n + 1 - mod(n, 2)
 	Assumes the samples are symmetrically arranged around k = 0,
 	i.e. if num_r is even, no sample hits k = 0, if num_r is odd, the centre one does.
 
+	Be aware that if num_φ is even, then the same k are measured twice but in opposed directions
+
 """
 macro calculate_spokes(num_φ, φ)
 	return esc(quote
@@ -43,7 +45,7 @@ radial_spokes(num_φ::Integer, num_r::Integer) = @calculate_spokes(num_φ, 2π /
 
 """
 function sort_angles!(
-	φ::AbstractVector{<: Real},
+	φ::AbstractVector{<: Real}, # TODO clunky
 	indices::AbstractVector{<: Integer},
 	spokes_per_dynamic::Integer,
 	num_dynamic::Integer
@@ -101,5 +103,21 @@ function stack_of_stars(spoke_indices::AbstractMatrix{<: Integer}, partitions::A
 		error("Unrecognised version")
 	end
 	return sampling
+end
+
+
+function golden_kooshball(num_samples::Integer, num_φ::Integer, num_θ::Integer)
+
+	φ1, φ2 = golden_means(2)
+
+	θ = Vector{Float64}(undef, num_samples)
+	φ = similar(θ)
+
+	for i = 0:num_samples-1
+		θ[i+1] = acos(mod(i * φ1, 1))
+		φ[i+1] = 2π * mod(i * φ2, 1)
+	end
+
+	return φ, θ
 end
 
