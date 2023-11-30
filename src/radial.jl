@@ -151,7 +151,7 @@ function golden_kooshball(num_samples::Integer, num_φ::Integer, num_θ::Integer
 	φ_resolution = 2π / num_φ
 	for i = 0:num_samples-1
 		t = i + 1
-		θ[t] = acos(mod(i * φ1, 1))
+		θ[t] = acos(mod(i * φ1, 2) - 1)
 		φ[t] = 2π * mod(i * φ2, 1)
 		@show n = floor(Int, θ[t] / θ_resolution)
 		@show m = floor(Int, φ[t] / φ_resolution)
