@@ -24,3 +24,20 @@ function golden_angle_incremented(num::Integer, angles_per_2π::Integer; n_golde
 	return φ, indices
 end
 
+
+function golden_means(dim::Integer)
+	# Chan2009
+	dim += 1
+	Fib = zeros(dim, dim)
+	Fib[dim+1:dim+1:end] .= 1
+	Fib[dim, dim] = 1
+	Fib[dim, 1] = 1
+	@views begin
+		F = eigen(Fib)
+		@assert isapprox(imag(F.values[end]), 0.0)
+		v = abs.(F.vectors[:, end])
+		v = v[1:end-1] ./ v[end]
+	end
+	return v
+end
+
