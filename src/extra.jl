@@ -213,7 +213,7 @@ end
 #			#orthogonal_dims = min(i-1, num_σ)
 #			#@views mul!(orthogonal[1:orthogonal_dims, :], Q', VHn)
 #			#@views orthogonal_norm = dropdims(sum(abs2, orthogonal[1:orthogonal_dims, :]; dims=1); dims=1)
-#			Threads.@threads for t = 1:num_dynamic
+#			Threads.@threads :static for t = 1:num_dynamic
 #				this_M = Mt[Threads.threadid()]
 #				@views this_M[:, i] = VHn[:, t]
 #				orthogonal_norm[t] = @views cond(this_M[:, 1:i])

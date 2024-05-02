@@ -9,6 +9,7 @@ end
 
 """
 	Every point in k-t domain has the same probability
+	TODO: not true, turns out this is regularly spaced sampling
 """
 function uniform_dynamic(shape::NTuple{N, Integer}, num_dynamic::Integer, readouts_per_dynamic::Integer) where N
 	num_samples = num_dynamic * readouts_per_dynamic
@@ -17,6 +18,7 @@ function uniform_dynamic(shape::NTuple{N, Integer}, num_dynamic::Integer, readou
 	j = 1
 	for i = 1:num_dynamic
 		indices[i:num_dynamic:end] = spatial_indices[j:j+readouts_per_dynamic-1]
+		j += readouts_per_dynamic
 	end
 	return indices
 end

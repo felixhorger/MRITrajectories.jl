@@ -2,7 +2,7 @@
 """
 """
 # TODO: this belongs into MRITrajectories bc not directly related to reconstruction, but trajectory design
-function swap_duplicates_dynamic!(split_indices::AbstractVector{<: AbstractVector{<: CartesianIndex{N}}}; maxiter::Integer=0) where N
+function swap_duplicates_dynamic(split_indices::AbstractVector{<: AbstractVector{<: CartesianIndex{N}}}; maxiter::Integer=0) where N
 	num_dynamic = length(split_indices)
 	if maxiter == 0
 		maxiter = sum(length.(split_indices))
