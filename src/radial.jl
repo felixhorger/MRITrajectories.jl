@@ -75,6 +75,8 @@ end
 """
 	Sort angles for dynamic imaging to minimise the difference between consecutive angles
 	φ[spokes per dynamic, dynamic], indices same
+	works only if φ ∈ [0, 2π] TODO
+	TODO: this doesn't work properly, need to manually find the best match, where the diff must be smaller than pi! (circle ...)
 
 """
 function sort_angles!(
@@ -86,7 +88,7 @@ function sort_angles!(
 	@assert num_dynamic > 1
 	(φ, indices) = reshape.((φ, indices), spokes_per_dynamic, num_dynamic)
 	@views for p = 1:num_dynamic
-		perm = sortperm(φ[:, p])
+		perm = sortperm(φ[:, p]; by=β->(β > π ? β - 2π : β))
 		permute!(φ[:, p], perm)
 		permute!(indices[:, p], perm)
 	end
@@ -158,8 +160,8 @@ function golden_kooshball(num_samples::Integer)
 	θ = similar(φ)
 	for i = 0:num_samples-1
 		t = i + 1
-		φ[t] = 2π * mod(i * φ1, 1)
-		θ[t] = acos(mod(i * φ2, 2) - 1)
+		φ[t] = 2π * mod(i * φ2, 1)
+		θ[t] = acos(2 * mod(i * φ1, 1) - 1)
 	end
 	return φ, θ
 end

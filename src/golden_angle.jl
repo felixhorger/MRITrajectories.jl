@@ -41,3 +41,37 @@ function golden_means(dim::Integer)
 	return v
 end
 
+function uniquify_indices!(idx::AbstractVector{<: Integer})
+	used = zeros(Int, length(idx))
+
+	for i in idx
+		used[i] += 1
+	end
+
+	for (ii, i) in enumerate(idx)
+
+		used[i] == 1 && continue
+		local j_before = 0
+		for outer j_before = i-1:-1:1
+			used[j_before] != 0 && continue
+			break
+		end
+
+		local j_after = length(idx) + 1
+		for outer j_after = i+1:length(idx)
+			used[j_after] != 0 && continue
+			break
+		end
+
+		if i - j_before < j_after - i && j_before > 0 && used[j_before] == 0
+			idx[ii] = j_before
+			used[j_before] = 1
+		else
+			idx[ii] = j_after
+			used[j_after] = 1
+		end
+		used[i] -= 1
+	end
+	return idx
+end
+
